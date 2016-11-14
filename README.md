@@ -11,7 +11,7 @@
 ## Install
 
 ```
-npm install ng2-pdf-viewer --save
+npm install ttv-ng2-pdf-viewer --save
 ```
 
 ## Usage
