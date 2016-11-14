@@ -1,6 +1,3 @@
-/**
- * Created by vadimdez on 31/10/2016.
- */
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';

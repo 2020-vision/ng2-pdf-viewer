@@ -1,5 +1,5 @@
 {
-  "name": "ng2-pdf-viewer",
+  "name": "ttv-ng2-pdf-viewer",
   "version": "0.1.0",
   "description": "Angular2 component for rendering PDF",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://vadimdez@github.com/VadimDez/ng2-pdf-viewer.git"
+    "url": "git+https://github.com/2020-vision/ng2-pdf-viewer.git"
   },
   "keywords": [
     "angular",
@@ -31,7 +31,7 @@
     "ng2",
     "ng2-pdf"
   ],
-  "author": "Vadym Yatsyuk <vadym.yatsyuk@gmail.com>",
+  "author": "Eugene Andrukh <eandruh@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/VadimDez/ng2-pdf-viewer/issues"

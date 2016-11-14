@@ -1,6 +1,3 @@
-/**
- * Created by vadimdez on 21/06/16.
- */
 import {
   Component, Input, Output, ElementRef, EventEmitter
 } from '@angular/core';
