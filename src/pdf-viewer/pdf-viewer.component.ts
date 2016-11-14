@@ -32,7 +32,9 @@ export class PdfViewerComponent {
   set src(_src) {
     this._src = _src;
 
-    this.fn();
+    this.loadDocument(() => {
+      this.fn();
+    });
   }
 
   @Input()
@@ -92,7 +94,7 @@ export class PdfViewerComponent {
     return this._zoom;
   }
 
-  private fn() {
+  private loadDocument(callback: Function) {
     (<any>window).PDFJS.getDocument(this._src).then((pdf: any) => {
       this._pdf = pdf;
 
@@ -100,16 +102,22 @@ export class PdfViewerComponent {
         this.afterLoadComplete(pdf);
       }
 
-      if (!this.isValidPageNumber(this._page)) {
-        this._page = 1;
+      if (callback) {
+        callback();
       }
-
-      if (!this._showAll) {
-        return this.renderPage(this._page);
-      }
-
-      return this.renderMultiplePages();
     });
+  }
+
+  private fn() {
+    if (!this.isValidPageNumber(this._page)) {
+      this._page = 1;
+    }
+
+    if (!this._showAll) {
+      return this.renderPage(this._page);
+    }
+
+    return this.renderMultiplePages();
   }
 
   private renderMultiplePages() {
