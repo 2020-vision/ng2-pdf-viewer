@@ -10,12 +10,13 @@ const Builder  = require("systemjs-builder");
 const inlineNg2Template = require('gulp-inline-ng2-template');
 const exec = require('child_process').exec;
 const os = require('os');
+const runSequence = require('run-sequence');
 
 /**
  * Remove build directory.
  */
 gulp.task('clean', (cb) => {
-  return del(["build"], cb);
+  return del(["build", "dist"], cb);
 });
 
 /**
@@ -89,6 +90,13 @@ gulp.task("files", () => {
     .pipe(gulp.dest("build"));
 });
 
+gulp.task("dist", () => {
+  return gulp.src([
+      'build/pdf-viewer/**'
+    ])
+    .pipe(gulp.dest("dist"));
+});
+
 /**
  * Watch for changes in TypeScript, HTML and CSS files.
  */
@@ -107,6 +115,13 @@ gulp.task('watch', function () {
  */
 gulp.task("build", ['compile', 'resources', 'libs', 'files'], () => {
   console.log("Building the project ...");
+});
+
+gulp.task('default', ['clean'], () => {
+  runSequence(
+    'build',
+    'dist'
+  );
 });
 
 gulp.task("builder", function() {
