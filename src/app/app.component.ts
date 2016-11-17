@@ -21,8 +21,6 @@ export class AppComponent {
 
   page: number = 1;
   zoom: number = 1.0;
-  originalSize: boolean = false;
-  showAll: boolean = true;
   pdf: any;
 
   constructor() {

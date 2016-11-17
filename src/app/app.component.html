@@ -71,12 +71,11 @@
                     Next
                 </button>
             </div>
-            <pdf-viewer [src]="pdfSrc"
-                        [(page)]="page"
-                        [original-size]="originalSize"
-                        [show-all]="showAll"
-                        [after-load-complete]="afterLoadComplete"
-                        [zoom]="zoom"
+            <pdf-viewer
+                [src]="pdfSrc"
+                [(page)]="page"
+                [zoom]="zoom"
+                (after-load-complete)="afterLoadComplete($event)"
             ></pdf-viewer>
 
         </div>

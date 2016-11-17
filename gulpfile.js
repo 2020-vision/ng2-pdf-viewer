@@ -16,7 +16,7 @@ const runSequence = require('run-sequence');
  * Remove build directory.
  */
 gulp.task('clean', (cb) => {
-  return del(["build", "dist"], cb);
+  return del(["build/*", "dist/*"], cb);
 });
 
 /**

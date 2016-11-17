@@ -1,11 +1,22 @@
 import {
-  Component, Input, Output, ElementRef, EventEmitter
+  Component, Input, Output, ElementRef, EventEmitter, OnInit
 } from '@angular/core';
 import 'pdfjs-dist/build/pdf.combined';
+import 'pdfjs-dist/web/pdf_viewer';
+
+export class ZoomConstants {
+  static readonly Auto: Zoom = 'auto';
+  static readonly PageActual: Zoom = 'page-actual';
+  static readonly PageWidth: Zoom = 'page-width';
+  static readonly PageHeight: Zoom = 'page-height';
+  static readonly PageFit: Zoom = 'page-fit';
+}
+
+export type Zoom = number | 'auto' | 'page-actual' | 'page-width' | 'page-height' | 'page-fit';
 
 @Component({
   selector: 'pdf-viewer',
-  template: `<div class="ng2-pdf-viewer-container" [ngClass]="{'ng2-pdf-viewer--zoom': zoom < 1}"></div>`,
+  template: `<div class="ng2-pdf-viewer-container" [ngClass]="{'ng2-pdf-viewer--zoom': zoom < 1}"><div class="pdfViewer"></div></div>`,
   styles: [`
     .ng2-pdf-viewer--zoom {
         overflow-x: scroll;
@@ -13,157 +24,106 @@ import 'pdfjs-dist/build/pdf.combined';
   ]
 })
 
-export class PdfViewerComponent {
+export class PdfViewerComponent implements OnInit {
   private _showAll: boolean = false;
-  private _originalSize: boolean = true;
   private _src: any;
-  private _pdf: any;
   private _page: number = 1;
-  private _zoom: number = 1;
-  private wasInvalidPage: boolean = false;
-  @Input('after-load-complete') afterLoadComplete: Function;
+  private _zoom: Zoom = 1;
 
-  constructor(private element: ElementRef) {}
+  private _pdfViewer: any;
+  private _pdfDocument: any;
+
+  @Output('after-load-complete') afterLoadComplete: EventEmitter<any> = new EventEmitter<any>(true);
+  @Output('page-change') pageChange: EventEmitter<number> = new EventEmitter<number>(true);
+  @Output('zoom-change') zoomChange: EventEmitter<number> = new EventEmitter<number>(true);
 
   @Input()
   set src(_src) {
     this._src = _src;
 
-    this.loadDocument(() => {
-      this.fn();
-    });
+    this.loadDocument();
   }
 
-  @Input()
+  @Input('page')
   set page(_page) {
     _page = parseInt(_page, 10);
 
-    if (!this._pdf) {
+    if (!this._pdfDocument) {
       return;
     }
 
     if (this.isValidPageNumber(_page)) {
       this._page = _page;
-      this.renderPage(_page);
-      this.wasInvalidPage = false;
+      this.pageChange.emit(this._page);
     } else if (isNaN(_page)) {
       this.pageChange.emit(null);
-    } else if (!this.wasInvalidPage) {
-      this.wasInvalidPage = true;
-      this.pageChange.emit(this._page);
-    }
-  }
-
-  @Output() pageChange: EventEmitter<number> = new EventEmitter<number>(true);
-
-  @Input('original-size')
-  set originalSize(originalSize: boolean) {
-    this._originalSize = originalSize;
-
-    if (this._pdf) {
-      this.fn();
-    }
-  }
-
-  @Input('show-all')
-  set showAll(value: boolean) {
-    this._showAll = value;
-
-    if (this._pdf) {
-      this.fn();
     }
   }
 
   @Input('zoom')
-  set zoom(value: number) {
+  set zoom(value: any) {
     if (value <= 0) {
       return;
     }
 
     this._zoom = value;
 
-    if (this._pdf) {
-      this.fn();
+    if (!this._pdfViewer) {
+      return;
     }
+
+    this.refreshPdfViewer();
   }
 
-  get zoom() {
-    return this._zoom;
+  constructor(private element: ElementRef) {
+    // The workerSrc property should be specified.
+    //PDFJS.workerSrc = '../../build/dist/build/pdf.worker.js';
+    // Or
+    PDFJS.disableWorker = true;
   }
 
-  private loadDocument(callback: Function) {
-    (<any>window).PDFJS.getDocument(this._src).then((pdf: any) => {
-      this._pdf = pdf;
+  ngOnInit(): void {
+    let container = this.element.nativeElement.querySelector('div');
 
-      if (this.afterLoadComplete && typeof this.afterLoadComplete === 'function') {
-        this.afterLoadComplete(pdf);
-      }
+    container.addEventListener('pagesinit', () => this.onPagesInit());
+    container.addEventListener('scalechange', () => this.onScaleChange());
 
-      if (callback) {
-        callback();
-      }
+    this._pdfViewer = new PDFJS.PDFViewer({
+      container: container
     });
   }
 
-  private fn() {
-    if (!this.isValidPageNumber(this._page)) {
-      this._page = 1;
-    }
-
-    if (!this._showAll) {
-      return this.renderPage(this._page);
-    }
-
-    return this.renderMultiplePages();
+  private onPagesInit() {
+    this.refreshPdfViewer();
   }
 
-  private renderMultiplePages() {
-    let container = this.element.nativeElement.querySelector('div');
-    let page = 1;
-    const renderPageFn = (page: number) => () => this.renderPage(page);
+  private onScaleChange() {
+    this.zoomChange.emit(this._pdfViewer.currentScale);
+  }
 
-    this.removeAllChildNodes(container);
+  private loadDocument() {
+    (<any>window).PDFJS.getDocument(this._src).then((pdf: any) => {
+      this._pdfDocument = pdf;
+      this._pdfViewer.setDocument(pdf);
 
-    let d = this.renderPage(page++);
+      this.afterLoadComplete.emit(pdf);
+    });
+  }
 
-    for (page; page <= this._pdf.numPages; page++) {
-      d = d.then(renderPageFn(page));
+  private refreshPdfViewer() {
+    if (!this._pdfDocument) {
+      return;
     }
+
+    if (!this.isValidPageNumber(this._page)) {
+      this._page = 1;
+      this._pdfViewer.page = this._page;
+    }
+
+    this._pdfViewer.currentScaleValue = this._zoom;
   }
 
   private isValidPageNumber(page: number) {
-    return this._pdf.numPages >= page && page >= 1;
-  }
-
-  private renderPage(page: number) {
-    return this._pdf.getPage(page).then((page: any) => {
-      let viewport = page.getViewport(this._zoom);
-      let container = this.element.nativeElement.querySelector('div');
-      let canvas: HTMLCanvasElement = document.createElement('canvas');
-
-      if (!this._originalSize) {
-        viewport = page.getViewport(this.element.nativeElement.offsetWidth / viewport.width);
-      }
-
-      if (!this._showAll) {
-        this.removeAllChildNodes(container);
-      }
-
-      container.appendChild(canvas);
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      page.render({
-        canvasContext: canvas.getContext('2d'),
-        viewport: viewport
-      });
-    });
-  }
-
-  private removeAllChildNodes(element: HTMLElement) {
-    while (element.firstChild) {
-      element.removeChild(element.firstChild);
-    }
+    return this._pdfDocument.numPages >= page && page >= 1;
   }
 }
