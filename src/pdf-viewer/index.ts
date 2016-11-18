@@ -1,1 +1,1 @@
-export { PdfViewerComponent } from './pdf-viewer.component';
+export { PdfViewerComponent, Zoom, ZoomConstants } from './pdf-viewer.component';
